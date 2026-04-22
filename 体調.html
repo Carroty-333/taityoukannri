@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>体調チェック</title>
+<style>
+:root {
+  --green: #00B900;
+  --green-dk: #008f00;
+  --green-lt: #e8f8e8;
+  --bg: #f0f0f0;
+  --card: #fff;
+  --text: #1a1a1a;
+  --muted: #888;
+  --border: #e0e0e0;
+  --sel-bg: #e0f4e0;
+  --sel-bd: #00B900;
+  --sel-tx: #005900;
+  --r: 12px;
+  --rs: 8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif;color:var(--text)}
+.page{max-width:480px;margin:0 auto;padding-bottom:90px}
+
+.topbar{background:var(--green);padding:14px 16px 10px;position:sticky;top:0;z-index:10}
+.topbar h1{font-size:16px;font-weight:700;color:#fff}
+.topbar p{font-size:12px;color:rgba(255,255,255,.8);margin-top:2px}
+
+.prog-wrap{height:3px;background:var(--border)}
+.prog-fill{height:100%;background:var(--green);transition:width .3s}
+
+.datebar{background:var(--card);padding:9px 16px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)}
+
+.card{background:var(--card);margin:10px 10px 0;border-radius:var(--r);overflow:hidden}
+.card-head{padding:13px 15px 9px;font-size:13px;font-weight:700;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.req{font-size:10px;background:#ff6b6b;color:#fff;padding:1px 5px;border-radius:4px}
+.opt{font-size:10px;background:var(--border);color:var(--muted);padding:1px 5px;border-radius:4px}
+
+/* 絵文字行 */
+.emoji-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:11px 10px}
+.eb{border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 3px 6px;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit}
+.eb .ei{font-size:22px;line-height:1}
+.eb .el{font-size:10px;color:var(--muted);text-align:center;line-height:1.3}
+.eb.sel{background:var(--sel-bg);border-color:var(--sel-bd)}
+.eb.sel .el{color:var(--sel-tx);font-weight:700}
+
+/* ピル */
+.pills{display:flex;flex-wrap:wrap;gap:7px;padding:11px 12px}
+.pill{border:1.5px solid var(--border);border-radius:999px;padding:7px 12px;font-size:13px;color:var(--text);background:transparent;cursor:pointer;font-family:inherit;line-height:1}
+.pill.sel{background:var(--sel-bg);border-color:var(--sel-bd);color:var(--sel-tx);font-weight:700}
+
+/* 睡眠カード */
+.sleep-cards{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:11px 12px 6px}
+.sc{border:1.5px solid var(--border);border-radius:var(--rs);padding:11px 10px;background:transparent;cursor:pointer;text-align:left;font-family:inherit;display:flex;align-items:center;gap:8px}
+.sc .si{font-size:18px}
+.sc .st{font-size:12px;color:var(--text);line-height:1.4}
+.sc.sel{background:var(--sel-bg);border-color:var(--sel-bd)}
+.sc.sel .st{color:var(--sel-tx);font-weight:700}
+
+/* 時間入力 */
+.time-area{padding:4px 12px 13px}
+.time-label{font-size:12px;color:var(--muted);margin-bottom:5px}
+.time-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tf label{font-size:11px;color:var(--muted);display:block;margin-bottom:3px}
+.tf input[type=time]{width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 10px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text);outline:none}
+.tf input[type=time]:focus{border-color:var(--green)}
+
+/* 活動 */
+.energy-list{display:flex;flex-direction:column;gap:7px;padding:11px 12px}
+.eg{border:1.5px solid var(--border);border-radius:var(--rs);padding:12px 14px;background:transparent;cursor:pointer;text-align:left;font-family:inherit;font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px}
+.eg .ei2{font-size:17px}
+.eg.sel{background:var(--sel-bg);border-color:var(--sel-bd);color:var(--sel-tx);font-weight:700}
+
+/* テキスト */
+.note-inner{padding:4px 12px 13px}
+.note-hint{font-size:12px;color:var(--muted);padding:6px 0 5px}
+textarea{width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 11px;font-size:14px;font-family:inherit;color:var(--text);background:var(--card);resize:none;min-height:76px;outline:none;line-height:1.7}
+textarea:focus{border-color:var(--green)}
+
+/* フッター */
+.footer{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:11px 14px;z-index:10}
+.sub-btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer}
+.sub-btn:disabled{background:#ccc;cursor:not-allowed}
+.sub-btn:not(:disabled):active{background:var(--green-dk)}
+
+/* 結果画面 */
+#result-screen{display:none;padding:16px 12px 100px}
+.result-card{background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:10px}
+.result-title{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text)}
+.result-row{display:flex;gap:8px;margin-bottom:8px;font-size:13px;line-height:1.6}
+.rl{color:var(--muted);min-width:72px;flex-shrink:0}
+.rv{color:var(--text)}
+.copy-area{background:#f8f8f8;border:1.5px solid var(--border);border-radius:var(--rs);padding:12px;margin-top:10px;font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text)}
+.copy-btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:10px}
+.copy-btn:active{background:var(--green-dk)}
+.copy-hint{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.6}
+.copied-badge{display:none;background:var(--sel-bg);border:1px solid var(--sel-bd);color:var(--sel-tx);border-radius:var(--rs);padding:10px;text-align:center;font-size:13px;font-weight:700;margin-top:8px}
+.back-btn{width:100%;padding:11px;background:transparent;border:1.5px solid var(--border);border-radius:var(--r);font-size:14px;font-family:inherit;color:var(--muted);cursor:pointer;margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- 入力画面 -->
+<div id="input-screen">
+<div class="page">
+  <div class="topbar">
+    <h1>今日の体調チェック</h1>
+    <p>選ぶだけでOKです。気軽に教えてください</p>
+  </div>
+  <div class="prog-wrap"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+  <div class="datebar" id="datebar"></div>
+
+  <!-- 気持ち -->
+  <div class="card">
+    <div class="card-head">いまの気持ち・体の感じ <span class="req">必須</span></div>
+    <div class="emoji-row" id="mood">
+      <button class="eb" data-v="とても元気"><span class="ei">😄</span><span class="el">とても元気</span></button>
+      <button class="eb" data-v="まあまあ"><span class="ei">🙂</span><span class="el">まあまあ</span></button>
+      <button class="eb" data-v="ふつう"><span class="ei">😐</span><span class="el">ふつう</span></button>
+      <button class="eb" data-v="すこし辛い"><span class="ei">😔</span><span class="el">すこし辛い</span></button>
+      <button class="eb" data-v="とても辛い"><span class="ei">😞</span><span class="el">とても辛い</span></button>
+    </div>
+  </div>
+
+  <!-- 体の症状 -->
+  <div class="card">
+    <div class="card-head">体の症状 <span class="req">必須</span></div>
+    <div class="pills" id="symptoms">
+      <button class="pill" data-v="症状なし">症状なし</button>
+      <button class="pill" data-v="頭痛">頭痛</button>
+      <button class="pill" data-v="腹痛・胃の不調">腹痛・胃の不調</button>
+      <button class="pill" data-v="だるさ・疲れ">だるさ・疲れ</button>
+      <button class="pill" data-v="身体が重い">身体が重い</button>
+      <button class="pill" data-v="眠気が強い">眠気が強い</button>
+      <button class="pill" data-v="落ち着かない">落ち着かない</button>
+      <button class="pill" data-v="緊張・ドキドキ">緊張・ドキドキ</button>
+      <button class="pill" data-v="めまい・ふらつき">めまい・ふらつき</button>
+      <button class="pill" data-v="吐き気">吐き気</button>
+      <button class="pill" data-v="食欲がない">食欲がない</button>
+      <button class="pill" data-v="肩・首のこり">肩・首のこり</button>
+      <button class="pill" data-v="動悸">動悸</button>
+      <button class="pill" data-v="息苦しさ">息苦しさ</button>
+      <button class="pill" data-v="手足のしびれ">手足のしびれ</button>
+      <button class="pill" data-v="その他">その他</button>
+    </div>
+  </div>
+
+  <!-- こころ -->
+  <div class="card">
+    <div class="card-head">こころの状態 <span class="req">必須</span></div>
+    <div class="pills" id="mental">
+      <button class="pill" data-v="落ち着いている">落ち着いている</button>
+      <button class="pill" data-v="不安がある">不安がある</button>
+      <button class="pill" data-v="憂うつ・気分が重い">憂うつ・気分が重い</button>
+      <button class="pill" data-v="イライラしている">イライラしている</button>
+      <button class="pill" data-v="集中できない">集中できない</button>
+      <button class="pill" data-v="やる気が出ない">やる気が出ない</button>
+      <button class="pill" data-v="特に問題なし">特に問題なし</button>
+    </div>
+  </div>
+
+  <!-- 睡眠 -->
+  <div class="card">
+    <div class="card-head">昨夜の睡眠 <span class="req">必須</span></div>
+    <div class="sleep-cards" id="sleep">
+      <button class="sc" data-v="よく眠れた"><span class="si">😴</span><span class="st">よく眠れた</span></button>
+      <button class="sc" data-v="まあまあ眠れた"><span class="si">🌙</span><span class="st">まあまあ眠れた</span></button>
+      <button class="sc" data-v="あまり眠れなかった"><span class="si">😵</span><span class="st">あまり眠れなかった</span></button>
+      <button class="sc" data-v="ほとんど眠れなかった"><span class="si">🌑</span><span class="st">ほとんど眠れなかった</span></button>
+    </div>
+    <div class="time-area">
+      <div class="time-label">寝た・起きた時間（任意）</div>
+      <div class="time-row">
+        <div class="tf"><label>寝た時間</label><input type="time" id="t-sleep"></div>
+        <div class="tf"><label>起きた時間</label><input type="time" id="t-wake"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 活動意欲 -->
+  <div class="card">
+    <div class="card-head">今日の活動について <span class="req">必須</span></div>
+    <div class="energy-list" id="energy">
+      <button class="eg" data-v="しっかり通所・活動できそう"><span class="ei2">💪</span>しっかり通所・活動できそう</button>
+      <button class="eg" data-v="少し通所できそう"><span class="ei2">🚶</span>少し通所できそう</button>
+      <button class="eg" data-v="通所は難しいが少し動けそう"><span class="ei2">🛋️</span>通所は難しいが少し動けそう</button>
+      <button class="eg" data-v="無理せずゆっくり過ごしたい"><span class="ei2">🌿</span>無理せずゆっくり過ごしたい</button>
+      <button class="eg" data-v="しばらく休養が必要そう"><span class="ei2">🛌</span>しばらく休養が必要そう</button>
+    </div>
+  </div>
+
+  <!-- 自由記述 -->
+  <div class="card" style="margin-bottom:0">
+    <div class="card-head">支援員に伝えたいこと <span class="opt">任意</span></div>
+    <div class="note-inner">
+      <div class="note-hint">言葉にしにくいことも、思ったままで大丈夫です</div>
+      <textarea id="note" rows="3" placeholder="例：昨日から少し気持ちが沈んでいます"></textarea>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  <button class="sub-btn" id="sub-btn" disabled>内容をまとめる</button>
+</div>
+</div>
+
+<!-- 結果画面 -->
+<div id="result-screen">
+  <div class="result-card">
+    <div class="result-title">📋 支援員への共有内容</div>
+    <div id="result-rows"></div>
+  </div>
+  <div class="result-card">
+    <div class="result-title">LINEに貼り付けるテキスト</div>
+    <div class="copy-area" id="copy-text"></div>
+    <button class="copy-btn" id="copy-btn">このテキストをコピーする</button>
+    <div class="copy-hint">コピーしたら、LINEの入力欄に貼り付けて送信してください</div>
+    <div class="copied-badge" id="copied-badge">✅ コピーしました！LINEに貼り付けてください</div>
+  </div>
+  <button class="back-btn" id="back-btn">もう一度入力する</button>
+</div>
+
+<script>
+const st = { mood:null, symptoms:[], mental:[], sleep:null, energy:null };
+const REQ = ['mood','symptoms','mental','sleep','energy'];
+
+const now = new Date();
+document.getElementById('datebar').textContent =
+  now.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+
+function single(id, key) {
+  document.getElementById(id).querySelectorAll('[data-v]').forEach(b => {
+    b.addEventListener('click', () => {
+      document.getElementById(id).querySelectorAll('[data-v]').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+      st[key] = b.dataset.v;
+      upd();
+    });
+  });
+}
+function multi(id, key, nones) {
+  document.getElementById(id).querySelectorAll('[data-v]').forEach(b => {
+    b.addEventListener('click', () => {
+      const v = b.dataset.v, isNone = nones.includes(v);
+      if (isNone) {
+        document.getElementById(id).querySelectorAll('[data-v]').forEach(x => x.classList.remove('sel'));
+        b.classList.add('sel');
+        st[key] = [v];
+      } else {
+        nones.forEach(n => document.getElementById(id).querySelector(`[data-v="${n}"]`)?.classList.remove('sel'));
+        b.classList.toggle('sel');
+        st[key] = [...document.getElementById(id).querySelectorAll('[data-v].sel')].map(x => x.dataset.v);
+      }
+      upd();
+    });
+  });
+}
+function upd() {
+  const done = REQ.filter(k => Array.isArray(st[k]) ? st[k].length > 0 : !!st[k]).length;
+  document.getElementById('prog').style.width = (done / REQ.length * 100) + '%';
+  document.getElementById('sub-btn').disabled = done < REQ.length;
+}
+
+single('mood','mood');
+multi('symptoms','symptoms',['症状なし']);
+multi('mental','mental',['特に問題なし']);
+single('sleep','sleep');
+single('energy','energy');
+
+document.getElementById('sub-btn').addEventListener('click', () => {
+  const ts = document.getElementById('t-sleep').value;
+  const tw = document.getElementById('t-wake').value;
+  const note = document.getElementById('note').value.trim();
+  const dateStr = now.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
+
+  let sleepStr = st.sleep;
+  const timeParts = [];
+  if (ts) timeParts.push('就寝 ' + ts);
+  if (tw) timeParts.push('起床 ' + tw);
+  if (timeParts.length) sleepStr += '（' + timeParts.join('・') + '）';
+
+  const rows = [
+    { l:'日付', v: dateStr },
+    { l:'気持ち', v: st.mood },
+    { l:'体の症状', v: st.symptoms.join('・') },
+    { l:'こころ', v: st.mental.join('・') },
+    { l:'睡眠', v: sleepStr },
+    { l:'活動', v: st.energy },
+  ];
+  if (note) rows.push({ l:'コメント', v: note });
+
+  // 結果行
+  document.getElementById('result-rows').innerHTML = rows.map(r =>
+    `<div class="result-row"><span class="rl">${r.l}</span><span class="rv">${r.v}</span></div>`
+  ).join('');
+
+  // コピー用テキスト
+  const txt = [
+    '【体調チェック】' + dateStr,
+    ...rows.slice(1).map(r => `・${r.l}：${r.v}`)
+  ].join('\n');
+  document.getElementById('copy-text').textContent = txt;
+
+  document.getElementById('input-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'block';
+  window.scrollTo(0, 0);
+});
+
+document.getElementById('copy-btn').addEventListener('click', async () => {
+  const txt = document.getElementById('copy-text').textContent;
+  try {
+    await navigator.clipboard.writeText(txt);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  document.getElementById('copied-badge').style.display = 'block';
+  document.getElementById('copy-btn').textContent = '✅ コピー済み';
+});
+
+document.getElementById('back-btn').addEventListener('click', () => {
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('input-screen').style.display = 'block';
+  document.getElementById('copied-badge').style.display = 'none';
+  document.getElementById('copy-btn').textContent = 'このテキストをコピーする';
+  window.scrollTo(0, 0);
+});
+</script>
+</body>
+</html>
